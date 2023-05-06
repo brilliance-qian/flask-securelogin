@@ -1,2 +1,2 @@
 # flask-securelogin
-A Flask-based installable library that integrates secure login with SMS and auth tokens.
+A Flask-based installable library that provides secure login capabilities with SMS and auth tokens.
