@@ -30,6 +30,7 @@ Create the environment
   $ source venv/bin/activate
   $ pip install flask-securelogin
   $ pip freeze > requirements.txt
+  $ mkdir app
   
 Directory tree structure
 ::
@@ -44,3 +45,86 @@ Directory tree structure
 
 app/__init__.py
 ::
+    from flask import Flask
+    from flask_sqlalchemy import SQLAlchemy
+    from flask_migrate import Migrate
+    from flask_securelogin import secure_auth
+    from config import Config
+
+    db = SQLAlchemy()
+    secure_auth.init_db(db)
+    migrate = Migrate()
+
+    def create_app(config_class=Config):
+        app = Flask(__name__, static_folder=None, instance_relative_config=True)
+        app.config.from_object(config_class)
+
+        db.init_app(app)
+        migrate.init_app(app, db)
+
+        secure_auth.init_app(app)
+
+        app.logger.setLevel(logging.INFO)
+
+        return app
+  
+app/routes.py
+::
+    from flask_securelogin import routes
+    from flask_securelogin.sms.TwilioClient import TwilioClient
+
+    @secure_auth.create_sms_service
+    def create_sms_service_instance(db, config, phone):
+        return TwilioClient(db, config)
+    
+entry.py
+::
+    from app import create_app, db
+    from app import routes
+    from flask_securelogin.models import User
+
+    app = create_app()
+
+    @app.shell_context_processor
+    def make_shell_context():
+        return {'db': db, 'User': User}
+        
+config.py, which is used to specify SMS vendor's setting
+::
+    import os
+    import traceback
+    import bcrypt
+    from datetime import timedelta
+
+    basedir = os.path.abspath(os.path.dirname(__file__))
+
+    class Config(object):
+        SERVICE_NAME = 'mysite'
+        SECRET_KEY = os.environ.get('SECRET_KEY') or '0122f9b60974f7dc71924f8c'
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, SERVICE_NAME + '.db')
+
+        SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+        JWT_SECRET_KEY = bcrypt.hashpw(b'FkGkIShuf4Mk40illonZJA', bcrypt.gensalt())
+        JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=10)
+        JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=60)
+
+        # SMS/OTP setting
+        OTP_EXPIRATION = 10             # 10 minutes
+        OTP_DIGITS = 6
+
+        # Twillio SID and Authe token
+        TWILIO_ACCOUNT_SID = 'account_sid' # get your account sid from Twillio
+        TWILIO_AUTH_TOKEN = 'auth_token'   # get your auth_token from Twillio
+        TWILIO_SMS_SID = 'sms_sid'         # get your sms_sid from Twillio
+
+After the code is done, run the commands below to initialize 
+::
+    $ flask db init
+    $ flask db migrate
+    $ flask db upgrade
+    
+Validate the auth routes
+::
+    $ flask routes
+    
