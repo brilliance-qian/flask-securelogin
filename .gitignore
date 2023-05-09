@@ -149,6 +149,13 @@ dmypy.json
 # pytype static type analyzer
 .pytype/
 
+# runtime files
+*.db
+
+# System generated temporary files (like vim temporary files)
+.*.swp
+.python-version
+
 # Cython debug symbols
 cython_debug/
 
