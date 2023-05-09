@@ -20,5 +20,5 @@ class TestSMSFactory:
         import warnings
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        sms = SMSFactory.create_instance(secure_auth.db, config, test_phone)
+        sms = SMSFactory.create_default_service(secure_auth.db, config, test_phone)
         assert sms.__class__.__name__ == class_name

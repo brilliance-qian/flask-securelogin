@@ -16,9 +16,7 @@ from flask_securelogin.models import User
 from tests.apitest.client import client  # noqa: F401 # pylint:disable=unused-import
 from tests.mockups.sms.SimulatorClient import SimulatorClient
 
-from flask_jwt_extended import (
-    decode_token,
-)
+from flask_jwt_extended import decode_token
 
 
 class TestToken:

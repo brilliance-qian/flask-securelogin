@@ -1,5 +1,6 @@
 from flask_securelogin.exception import AppException
 from flask_securelogin.models import UserActiveToken
+from flask_securelogin import secure_auth
 
 from flask_jwt_extended import (
     create_access_token,
@@ -122,8 +123,10 @@ class TokenManager():
     def check_if_token_revoked(self, token_jwt):
         token_type = token_jwt['type']
         if token_type != 'refresh':
-            # access token, skip check
-            # future: check the token against cache
+            handler = secure_auth.get_check_if_access_token_revoked_handler()
+            if handler is not None:
+                jti = token_jwt['jti']
+                return handler(jti)
             return False
 
         jti = token_jwt['jti']
