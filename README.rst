@@ -117,6 +117,13 @@ config.py, which is used to specify SMS vendor's setting
         TWILIO_ACCOUNT_SID = 'account_sid' # get your account sid from Twillio
         TWILIO_AUTH_TOKEN = 'auth_token'   # get your auth_token from Twillio
         TWILIO_SMS_SID = 'sms_sid'         # get your sms_sid from Twillio
+        
+        
+.flaskenv
+::
+    #.flaskenv
+    FLASK_APP=entry.py
+    FLASK_DEBUG=1
 
 After the code is done, run the commands below to initialize 
 ::
@@ -127,4 +134,17 @@ After the code is done, run the commands below to initialize
 Validate the auth routes
 ::
     $ flask routes
+    Endpoint                        Methods  Rule
+    ------------------------------  -------  -----------------------------------
+    auth.change_password            POST     /api/auth/password
+    auth.login                      POST     /api/auth/login_sms
+    auth.login                      POST     /api/auth/login
+    auth.logout                     POST     /api/auth/logout
+    auth.logout_all_other_sessions  POST     /api/auth/logout_all_other_sessions
+    auth.op                         POST     /api/auth/op
+    auth.op2                        POST     /api/auth/op2
+    auth.refresh                    POST     /api/auth/refresh
+    auth.register                   POST     /api/auth/register
+    auth.verify_sms                 POST     /api/auth/verify_sms
+    
     
