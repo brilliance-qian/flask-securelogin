@@ -13,7 +13,7 @@ def read_content(filename):
 
 setup(
     name='flask-securelogin',
-    version='0.1.0',
+    version='0.1.2',
     description='A Flask-based installable library that provides secure login capabilities with SMS and auth tokens.',
     long_description=read_content("README.rst"),
     long_description_content_type="text/markdown",
