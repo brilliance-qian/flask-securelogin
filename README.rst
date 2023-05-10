@@ -3,11 +3,17 @@ flask-securelogin
 *******************
 
 Description
--------------------
-Flask-securelogin is a library providing flask-based security authentication REST API services.
+############
+Flask-securelogin is a library providing flask-based REST API services for account authentication with strong security protection.
+
+When developers build a service for mobile app or for web, one important thing they have to consider is to build an authentication for their customers. Most developers would choose password-based login design and session-cooke-based authentication because it is easy to implement.
+
+Unfortunately password-based authentication is a vulnerable design. Their customers could be victims of many security attacks: brutal force attack, phishing attack, password-leak if the web service didn't design their account security protection carefully. Besides, password-based authentciation is also a hassle to customers. For better security, the web service provider usually would ask their customers to have a complex password that must be 12+ charactors long and is with combination of uppercase, lowercase letters, digits and special charactors. This kind of password is usally hard to remember. Some customers might write it down somewhere, which is not a good approach on account security. Some customers might use a same password across many websites as people may have accounts on dozens of websites and it is hard to keep and remember different password per website. This is also not a good approach on account security. To enhance the security, many websites then ask their customers to provide multiple-factor-authentication (MFA), which make the system complicated and the login process less user friendly. Besides, account recovery from forget-password is also a painful process for customers.
+
+Flask-securelogin provides a SMS-based passwordless authentication. The phone number is the customer's userid. After registration, when a customer is trying to login, just enter the phone number. The flask-securelogin sends SMS/OTP code to the customer. After SMS verification, the authentication is done. No password. No worry about phishing attack, brutal force attack or password leak. No worry about forgetting password. Concise and secure.
 
 Installation
--------------------
+############
 To install the latest release on `PyPI <https://pypi.org/project/flask-securelogin/>`_,
 simply run:
 ::
@@ -19,9 +25,11 @@ Or to install the latest development version, run:
   python3 setup.py install
   
 Quick Tutorial
--------------------
+################
 Flask-securelogin provides a set of authentication APIs that can be seamlessly integrated to your REST API service. In your flask application, just simply add a few lines then the whole set of APIs will be ready to support account registration and login.
 
+Setup
+******
 Create the environment
 ::
   $ mkdir sample_api
@@ -32,6 +40,8 @@ Create the environment
   $ pip freeze > requirements.txt
   $ mkdir app
   
+Source Code
+************
 Directory tree structure
 ::
     sample_api
@@ -42,7 +52,7 @@ Directory tree structure
     ├── config.py
     └── tests
         └── test_routes.py
-
+        
 app/__init__.py
 ::
     from flask import Flask
@@ -125,6 +135,9 @@ config.py, which is used to specify SMS vendor's setting
     FLASK_APP=entry.py
     FLASK_DEBUG=1
 
+Validation
+************
+
 After the code is done, run the commands below to initialize 
 ::
     $ flask db init
@@ -147,4 +160,6 @@ Validate the auth routes
     auth.register                   POST     /api/auth/register
     auth.verify_sms                 POST     /api/auth/verify_sms
     
-    
+Test
+************
+
