@@ -238,7 +238,7 @@ It receives a response with phone number and userid. Meanwhile, a SMS code is se
 
 If you didn't set Twilio settings correctly in config.py, you would receive below response
 
-.. code:: text
+.. code:: json
 
     {
       "error": "TwilioRestException",
