@@ -81,6 +81,7 @@ app/__init__.py
 app/routes.py
 ::
     from flask_securelogin import routes
+    from flask_securelogin import secure_auth
     from flask_securelogin.sms.TwilioClient import TwilioClient
 
     @secure_auth.create_sms_service
@@ -162,4 +163,75 @@ Validate the auth routes
     
 Test
 ************
+Before you start to test SMS-based authentication, you need to setup configuration for calling SMS vendor. In this example, I suggest Twilio as the vendor. Twilio provides free trial account for testing purpose. After you create a free trial account on Twillio, register and verify your phone number on the free trial acount, the phone number can be used for testing without charge. Copy the Twilio account SID, auth token and SMS SID from Twilio, update the info in config.py. You are good to go.
 
+For details about how to create free trial account and get account SID, auth token and SMS SID, please refer to  https://www.twilio.com/docs/usage/tutorials/how-to-use-your-free-trial-account
+
+After Twilio service is setup, let test the SMS-based authentication
+
+Open a terminal Run the API server
+::
+    $ cd sample_api
+    $ source venv/bin/activate
+    $ flask run
+     * Serving Flask app 'entry.py'
+     * Debug mode: on
+    WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+     * Running on http://127.0.0.1:5000
+    Press CTRL+C to quit
+     * Restarting with stat
+     * Debugger is active!
+     * Debugger PIN: 633-717-714
+
+
+Open another terminal, try below commands
+Create a test account
+::
+    $ curl -X POST -d '{ "username": "my test account", "auth_type": "PHONE", "phone": <YOUR_PHONE_NUMBER>}' -H "content-type: application/json" http://127.1:5000/api/auth/register
+    {
+      "message": "registered successfully",
+      "userid": "e5b53d55-bb32-40fb-aaeb-8ad750158639"
+    }
+    
+Login with the test account
+::
+    $ curl -X POST -d '{ "auth_type": "PHONE", "phone":  <YOUR_PHONE_NUMBER> }' -H "content-type: application/json" http://127.1:5000/api/auth/login
+    {
+      "phone":  <YOUR_PHONE_NUMBER>,
+      "userid": "e5b53d55-bb32-40fb-aaeb-8ad750158639"
+    }
+    
+It receives a response with phone number and userid. Meanwhile, a SMS code is sent to your phone by Twilio. Enter the phone, userid and SMS token in the next API to verify SMS.
+
+Verify SMS
+::
+    $ curl -X POST -d '{ "userid": "e5b53d55-bb32-40fb-aaeb-8ad750158639", "phone":  <YOUR_PHONE_NUMBER>, "token": <TOKEN> }' -H "content-type: application/json" http://127.1:5000/api/auth/verify_sms
+    {
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6dHJ1ZSwiaWF0IjoxNjgzNjkwNzY3LCJqdGkiOiI0ZmViZTI5Zi04YjRkLTQ1ZmMtOTc5Ni1iMjFmZTA0ZmRkOTYiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjoxLCJuYmYiOjE2ODM2OTA3NjcsImV4cCI6MTY4MzY5MTM2N30.1US8-ndM3S-wrjSz8I9XOyBjvTPAjs_CVCrPZowGMeQ",
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MDc2NywianRpIjoiNmQ2ZjNkMmMtMDEyNC00OTA2LThjYjAtMTFjMTA5Mzg0NWU3IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4MzY5MDc2NywiZXhwIjoxNjg4ODc0NzY3LCJzaWQiOiI1YWUwOWViMy03NTNlLTQ5NDYtYmNhZS0yN2UzNzk4NDVlOGYifQ.OXCMMmy9xn8-UooJVlnnCBFEd0s9MoXAx_z8q2O9RqQ",
+      "userid": "e5b53d55-bb32-40fb-aaeb-8ad750158639"
+    }
+    
+Now the SMS authentication is done. You received an access token and refresh token. Access token is used to call protected operations in the API server. Refresh token is used to refresh access token if the access token is expired.
+ 
+Call protected operations with the access token
+::
+    $ curl -X POST -d '{}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6dHJ1ZSwiaWF0IjoxNjgzNjkwNzY3LCJqdGkiOiI0ZmViZTI5Zi04YjRkLTQ1ZmMtOTc5Ni1iMjFmZTA0ZmRkOTYiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjoxLCJuYmYiOjE2ODM2OTA3NjcsImV4cCI6MTY4MzY5MTM2N30.1US8-ndM3S-wrjSz8I9XOyBjvTPAjs_CVCrPZowGMeQ" http://127.1:5000/api/auth/op
+    {
+      "message": "test op successful"
+    }
+
+Refresh token(please be reminded refresh token is used in Authorization header)
+::
+    $ curl -X POST -d '{}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MDc2NywianRpIjoiNmQ2ZjNkMmMtMDEyNC00OTA2LThjYjAtMTFjMTA5Mzg0NWU3IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4MzY5MDc2NywiZXhwIjoxNjg4ODc0NzY3LCJzaWQiOiI1YWUwOWViMy03NTNlLTQ5NDYtYmNhZS0yN2UzNzk4NDVlOGYifQ.OXCMMmy9xn8-UooJVlnnCBFEd0s9MoXAx_z8q2O9RqQ" http://127.1:5000/api/auth/refresh
+    {
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MTI5NCwianRpIjoiM2QxZTMxMjUtY2RlNC00MDkzLTgxMWQtYWNjZmZmNGIzZjUxIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6MSwibmJmIjoxNjgzNjkxMjk0LCJleHAiOjE2ODM2OTE4OTR9.0klw7uayU9qKh7fIEnhON6nrQdqFh1bbiF7mfnKOrJU",
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MTI5NCwianRpIjoiNDk1ZDdmMjQtNTU0Yy00NjM3LWE5NzYtMzJmNDFlNDMzNzI3IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4MzY5MTI5NCwiZXhwIjoxNjg4ODc1Mjk0LCJzaWQiOiI1YWUwOWViMy03NTNlLTQ5NDYtYmNhZS0yN2UzNzk4NDVlOGYifQ.UmNLBPuguHrGtsrJqNhp4TWgmu0OvORvEL58ittBgRc"
+    }
+    
+Logout
+::
+    $ curl -X POST -d '{ "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MTI5NCwianRpIjoiNDk1ZDdmMjQtNTU0Yy00NjM3LWE5NzYtMzJmNDFlNDMzNzI3IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4MzY5MTI5NCwiZXhwIjoxNjg4ODc1Mjk0LCJzaWQiOiI1YWUwOWViMy03NTNlLTQ5NDYtYmNhZS0yN2UzNzk4NDVlOGYifQ.UmNLBPuguHrGtsrJqNhp4TWgmu0OvORvEL58ittBgRc"}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MTI5NCwianRpIjoiM2QxZTMxMjUtY2RlNC00MDkzLTgxMWQtYWNjZmZmNGIzZjUxIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6MSwibmJmIjoxNjgzNjkxMjk0LCJleHAiOjE2ODM2OTE4OTR9.0klw7uayU9qKh7fIEnhON6nrQdqFh1bbiF7mfnKOrJU"  http://127.1:5000/api/auth/logout
+    {
+      "message": "logout successful"
+    }
