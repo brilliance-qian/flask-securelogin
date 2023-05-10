@@ -1,22 +1,11 @@
 from setuptools import setup
 import setuptools
-import os
-
-
-def read_content(filename):
-    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
-
-    with open(file_path, "r") as fh:
-        file_contents = fh.read()
-    return file_contents
-
 
 setup(
     name='flask-securelogin',
-    version='0.1.2',
+    version='0.1.8',
     description='A Flask-based installable library that provides secure login capabilities with SMS and auth tokens.',
-    long_description=read_content("README.rst"),
-    long_description_content_type="text/markdown",
+    long_description=open('README.rst', 'r').read(),
     url='https://github.com/brilliance-qian/flask-securelogin',
     author='Brilliance Qian',
     license_files=('LICENSE.txt',),
@@ -79,6 +68,8 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
     extras_require={
         "test": [
