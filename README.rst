@@ -186,6 +186,8 @@ Open a terminal Run the API server
 
 Open another terminal, try below commands
 Create a test account
+
+Registration API ``/api/auth/register``
 ::
     $ curl -X POST -d '{ "username": "my test account", "auth_type": "PHONE", "phone": <YOUR_PHONE_NUMBER>}' -H "content-type: application/json" http://127.1:5000/api/auth/register
     {
@@ -194,6 +196,8 @@ Create a test account
     }
     
 Login with the test account
+
+Login API ``/api/auth/login``
 ::
     $ curl -X POST -d '{ "auth_type": "PHONE", "phone":  <YOUR_PHONE_NUMBER> }' -H "content-type: application/json" http://127.1:5000/api/auth/login
     {
@@ -201,9 +205,23 @@ Login with the test account
       "userid": "e5b53d55-bb32-40fb-aaeb-8ad750158639"
     }
     
-It receives a response with phone number and userid. Meanwhile, a SMS code is sent to your phone by Twilio. Enter the phone, userid and SMS token in the next API to verify SMS.
+It receives a response with phone number and userid. Meanwhile, a SMS code is sent to your phone by Twilio. 
 
-Verify SMS
+If you didn't set Twilio settings correctly in config.py, you would receive below response
+::
+    {
+      "error": "TwilioRestException",
+      "exception": {
+        "exception": "NoneType",
+        "message": "None"
+      },
+      "http_code": "Bad Request",
+      "message": "\n\u001b[31m\u001b[49mHTTP Error\u001b[0m \u001b[37m\u001b[49mYour request was:\u001b[0m\n\n\u001b[36m\u001b[49mPOST /Services/sms_sid/Verifications\u001b[0m\n\n\u001b[37m\u001b[49mTwilio returned the following information:\u001b[0m\n\n\u001b[34m\u001b[49mUnable to create record: Authentication Error - invalid username\u001b[0m\n\n\u001b[37m\u001b[49mMore information may be available here:\u001b[0m\n\n\u001b[34m\u001b[49mhttps://www.twilio.com/docs/errors/20003\u001b[0m\n\n"
+    }
+
+Next step, enter the phone, userid and SMS token in the API below to verify SMS.
+
+Verify SMS API ``/api/auth/verify_sms``
 ::
     $ curl -X POST -d '{ "userid": "e5b53d55-bb32-40fb-aaeb-8ad750158639", "phone":  <YOUR_PHONE_NUMBER>, "token": <TOKEN> }' -H "content-type: application/json" http://127.1:5000/api/auth/verify_sms
     {
@@ -214,7 +232,9 @@ Verify SMS
     
 Now the SMS authentication is done. You received an access token and refresh token. Access token is used to call protected operations in the API server. Refresh token is used to refresh access token if the access token is expired.
  
-Call protected operations with the access token
+Call protected operations with the access token. After you create your own operation, you can replace it by yours.
+
+Operation API ``/api/auth/op``
 ::
     $ curl -X POST -d '{}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6dHJ1ZSwiaWF0IjoxNjgzNjkwNzY3LCJqdGkiOiI0ZmViZTI5Zi04YjRkLTQ1ZmMtOTc5Ni1iMjFmZTA0ZmRkOTYiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjoxLCJuYmYiOjE2ODM2OTA3NjcsImV4cCI6MTY4MzY5MTM2N30.1US8-ndM3S-wrjSz8I9XOyBjvTPAjs_CVCrPZowGMeQ" http://127.1:5000/api/auth/op
     {
@@ -222,6 +242,8 @@ Call protected operations with the access token
     }
 
 Refresh token(please be reminded refresh token is used in Authorization header)
+
+Refresh token API ``/api/auth/refresh``
 ::
     $ curl -X POST -d '{}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MDc2NywianRpIjoiNmQ2ZjNkMmMtMDEyNC00OTA2LThjYjAtMTFjMTA5Mzg0NWU3IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4MzY5MDc2NywiZXhwIjoxNjg4ODc0NzY3LCJzaWQiOiI1YWUwOWViMy03NTNlLTQ5NDYtYmNhZS0yN2UzNzk4NDVlOGYifQ.OXCMMmy9xn8-UooJVlnnCBFEd0s9MoXAx_z8q2O9RqQ" http://127.1:5000/api/auth/refresh
     {
@@ -229,7 +251,7 @@ Refresh token(please be reminded refresh token is used in Authorization header)
       "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MTI5NCwianRpIjoiNDk1ZDdmMjQtNTU0Yy00NjM3LWE5NzYtMzJmNDFlNDMzNzI3IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4MzY5MTI5NCwiZXhwIjoxNjg4ODc1Mjk0LCJzaWQiOiI1YWUwOWViMy03NTNlLTQ5NDYtYmNhZS0yN2UzNzk4NDVlOGYifQ.UmNLBPuguHrGtsrJqNhp4TWgmu0OvORvEL58ittBgRc"
     }
     
-Logout
+Logout API ``/api/auth/logout``
 ::
     $ curl -X POST -d '{ "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MTI5NCwianRpIjoiNDk1ZDdmMjQtNTU0Yy00NjM3LWE5NzYtMzJmNDFlNDMzNzI3IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4MzY5MTI5NCwiZXhwIjoxNjg4ODc1Mjk0LCJzaWQiOiI1YWUwOWViMy03NTNlLTQ5NDYtYmNhZS0yN2UzNzk4NDVlOGYifQ.UmNLBPuguHrGtsrJqNhp4TWgmu0OvORvEL58ittBgRc"}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MTI5NCwianRpIjoiM2QxZTMxMjUtY2RlNC00MDkzLTgxMWQtYWNjZmZmNGIzZjUxIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6MSwibmJmIjoxNjgzNjkxMjk0LCJleHAiOjE2ODM2OTE4OTR9.0klw7uayU9qKh7fIEnhON6nrQdqFh1bbiF7mfnKOrJU"  http://127.1:5000/api/auth/logout
     {
