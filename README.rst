@@ -83,6 +83,9 @@ app/__init__.py
 
         secure_auth.init_app(app)
 
+        from .routes import bp as app_bp
+        app.register_blueprint(app_bp, url_prefix='/api/app')
+
         app.logger.setLevel(logging.INFO)
 
         return app
@@ -91,9 +94,25 @@ app/routes.py
 
 .. code:: python
 
+    from flask import Blueprint
     from flask_securelogin import routes
     from flask_securelogin import secure_auth
     from flask_securelogin.sms.TwilioClient import TwilioClient
+    from flask_jwt_extended import (
+        get_jwt,
+        jwt_required,
+        get_jwt_identity
+    )
+
+    bp = Blueprint('app', __name__)
+    jwt=secure_auth.jwt
+
+
+    @bp.route('/hello', methods=['POST'])
+    @jwt_required()
+    def hello():
+        userid = get_jwt_identity()
+        return {"message": "hello world"}
 
     @secure_auth.create_sms_service
     def create_sms_service_instance(db, config, phone):
@@ -258,41 +277,53 @@ Verify SMS API ``/api/auth/verify_sms``
 
     $ curl -X POST -d '{ "userid": "e5b53d55-bb32-40fb-aaeb-8ad750158639", "phone":  <YOUR_PHONE_NUMBER>, "token": <TOKEN> }' -H "content-type: application/json" http://127.1:5000/api/auth/verify_sms
     {
-      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6dHJ1ZSwiaWF0IjoxNjgzNjkwNzY3LCJqdGkiOiI0ZmViZTI5Zi04YjRkLTQ1ZmMtOTc5Ni1iMjFmZTA0ZmRkOTYiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjoxLCJuYmYiOjE2ODM2OTA3NjcsImV4cCI6MTY4MzY5MTM2N30.1US8-ndM3S-wrjSz8I9XOyBjvTPAjs_CVCrPZowGMeQ",
-      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MDc2NywianRpIjoiNmQ2ZjNkMmMtMDEyNC00OTA2LThjYjAtMTFjMTA5Mzg0NWU3IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4MzY5MDc2NywiZXhwIjoxNjg4ODc0NzY3LCJzaWQiOiI1YWUwOWViMy03NTNlLTQ5NDYtYmNhZS0yN2UzNzk4NDVlOGYifQ.OXCMMmy9xn8-UooJVlnnCBFEd0s9MoXAx_z8q2O9RqQ",
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6dHJ1ZSwiaWF0IjoxNjgzNzg1OTE3LCJqdGkiOiJkNWU4OWI3Zi01ZTFkLTQ5ZDYtOWYyMi05NjRiY2IyNGRiMDMiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjoxLCJuYmYiOjE2ODM3ODU5MTcsImV4cCI6MTY4Mzc4NjUxN30.wUjOmTvYCDHBPGKNshS4GLou_TFgEupE7FZX_xcjfLw",
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4Mzc4NTkxNywianRpIjoiNjczYjM3MWEtYzE3Mi00OTAxLTllYzktM2UxZjk0MDY4MWI4IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4Mzc4NTkxNywiZXhwIjoxNjg4OTY5OTE3LCJzaWQiOiI1ZDVmNGZlMi00NzEzLTQ0MjgtOGQ1Yi00MGQ0NzU2NDQ1MTUifQ.Kaa-XGDFS73Mrey8-FZ_HVIaOAeUeE3GshXNC8XcQtc",
       "userid": "e5b53d55-bb32-40fb-aaeb-8ad750158639"
     }
+
     
 Now the SMS authentication is done. You received an access token and refresh token. Access token is used to call protected operations in the API server. Refresh token is used to refresh access token if the access token is expired.
  
-Call protected operations with the access token. After you create your own operation, you can replace it by yours.
+Call the internal test API with the access token.
 
 Operation API ``/api/auth/op``
 
 .. code:: text
 
-    $ curl -X POST -d '{}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6dHJ1ZSwiaWF0IjoxNjgzNjkwNzY3LCJqdGkiOiI0ZmViZTI5Zi04YjRkLTQ1ZmMtOTc5Ni1iMjFmZTA0ZmRkOTYiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjoxLCJuYmYiOjE2ODM2OTA3NjcsImV4cCI6MTY4MzY5MTM2N30.1US8-ndM3S-wrjSz8I9XOyBjvTPAjs_CVCrPZowGMeQ" http://127.1:5000/api/auth/op
+    $ curl -X POST -d '{}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6dHJ1ZSwiaWF0IjoxNjgzNzg1OTE3LCJqdGkiOiJkNWU4OWI3Zi01ZTFkLTQ5ZDYtOWYyMi05NjRiY2IyNGRiMDMiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjoxLCJuYmYiOjE2ODM3ODU5MTcsImV4cCI6MTY4Mzc4NjUxN30.wUjOmTvYCDHBPGKNshS4GLou_TFgEupE7FZX_xcjfLw" http://127.1:5000/api/auth/op
     {
       "message": "test op successful"
     }
 
-Refresh token(please be reminded refresh token is used in Authorization header)
+Now call your own API with the access token.
+
+.. code:: text
+
+    $ curl -X POST -d '{}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6dHJ1ZSwiaWF0IjoxNjgzNzg1OTE3LCJqdGkiOiJkNWU4OWI3Zi01ZTFkLTQ5ZDYtOWYyMi05NjRiY2IyNGRiMDMiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjoxLCJuYmYiOjE2ODM3ODU5MTcsImV4cCI6MTY4Mzc4NjUxN30.wUjOmTvYCDHBPGKNshS4GLou_TFgEupE7FZX_xcjfLw" http://127.1:5000/api/app/hello
+    {
+      "message": "hello world"
+    }
+
+If access token is expired, you can call ``/api/auth/refresh`` to get new access token. Here is the API call. Please be reminded refresh token is used in Authorization header.
 
 Refresh token API ``/api/auth/refresh``
 
 .. code:: text
 
-    $ curl -X POST -d '{}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MDc2NywianRpIjoiNmQ2ZjNkMmMtMDEyNC00OTA2LThjYjAtMTFjMTA5Mzg0NWU3IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4MzY5MDc2NywiZXhwIjoxNjg4ODc0NzY3LCJzaWQiOiI1YWUwOWViMy03NTNlLTQ5NDYtYmNhZS0yN2UzNzk4NDVlOGYifQ.OXCMMmy9xn8-UooJVlnnCBFEd0s9MoXAx_z8q2O9RqQ" http://127.1:5000/api/auth/refresh
+    $ curl -X POST -d '{}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4Mzc4NTkxNywianRpIjoiNjczYjM3MWEtYzE3Mi00OTAxLTllYzktM2UxZjk0MDY4MWI4IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4Mzc4NTkxNywiZXhwIjoxNjg4OTY5OTE3LCJzaWQiOiI1ZDVmNGZlMi00NzEzLTQ0MjgtOGQ1Yi00MGQ0NzU2NDQ1MTUifQ.Kaa-XGDFS73Mrey8-FZ_HVIaOAeUeE3GshXNC8XcQtc" http://127.1:5000/api/auth/refresh
     {
-      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MTI5NCwianRpIjoiM2QxZTMxMjUtY2RlNC00MDkzLTgxMWQtYWNjZmZmNGIzZjUxIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6MSwibmJmIjoxNjgzNjkxMjk0LCJleHAiOjE2ODM2OTE4OTR9.0klw7uayU9qKh7fIEnhON6nrQdqFh1bbiF7mfnKOrJU",
-      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MTI5NCwianRpIjoiNDk1ZDdmMjQtNTU0Yy00NjM3LWE5NzYtMzJmNDFlNDMzNzI3IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4MzY5MTI5NCwiZXhwIjoxNjg4ODc1Mjk0LCJzaWQiOiI1YWUwOWViMy03NTNlLTQ5NDYtYmNhZS0yN2UzNzk4NDVlOGYifQ.UmNLBPuguHrGtsrJqNhp4TWgmu0OvORvEL58ittBgRc"
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4Mzc4NjA3MiwianRpIjoiNWZiMDNhMzMtYjljOC00YTNkLWIwMWMtNGViZDE1YTQ5YzY3IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6MSwibmJmIjoxNjgzNzg2MDcyLCJleHAiOjE2ODM3ODY2NzJ9.lqCs7GaKPwETRskGSt3d9PwY32WBdVHU4HXjEYYhHI4",
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4Mzc4NjA3MiwianRpIjoiNTFmNzQzNzgtMzRkMC00MTBlLWFmMmQtMmI0MDFiODlkNDZjIiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4Mzc4NjA3MiwiZXhwIjoxNjg4OTcwMDcyLCJzaWQiOiI1ZDVmNGZlMi00NzEzLTQ0MjgtOGQ1Yi00MGQ0NzU2NDQ1MTUifQ.6yHMF42r75bTpqXCtDSclzfkQMWcZtxjZWywzV_-zYc"
     }
-    
+
+After everything is done, please logout the session.
+
 Logout API ``/api/auth/logout``
 
 .. code:: text
 
-    $ curl -X POST -d '{ "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MTI5NCwianRpIjoiNDk1ZDdmMjQtNTU0Yy00NjM3LWE5NzYtMzJmNDFlNDMzNzI3IiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4MzY5MTI5NCwiZXhwIjoxNjg4ODc1Mjk0LCJzaWQiOiI1YWUwOWViMy03NTNlLTQ5NDYtYmNhZS0yN2UzNzk4NDVlOGYifQ.UmNLBPuguHrGtsrJqNhp4TWgmu0OvORvEL58ittBgRc"}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4MzY5MTI5NCwianRpIjoiM2QxZTMxMjUtY2RlNC00MDkzLTgxMWQtYWNjZmZmNGIzZjUxIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6MSwibmJmIjoxNjgzNjkxMjk0LCJleHAiOjE2ODM2OTE4OTR9.0klw7uayU9qKh7fIEnhON6nrQdqFh1bbiF7mfnKOrJU"  http://127.1:5000/api/auth/logout
+    $ curl -X POST -d '{ "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4Mzc4NjA3MiwianRpIjoiNTFmNzQzNzgtMzRkMC00MTBlLWFmMmQtMmI0MDFiODlkNDZjIiwidHlwZSI6InJlZnJlc2giLCJzdWIiOjEsIm5iZiI6MTY4Mzc4NjA3MiwiZXhwIjoxNjg4OTcwMDcyLCJzaWQiOiI1ZDVmNGZlMi00NzEzLTQ0MjgtOGQ1Yi00MGQ0NzU2NDQ1MTUifQ.6yHMF42r75bTpqXCtDSclzfkQMWcZtxjZWywzV_-zYc"}' -H "content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY4Mzc4NjA3MiwianRpIjoiNWZiMDNhMzMtYjljOC00YTNkLWIwMWMtNGViZDE1YTQ5YzY3IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6MSwibmJmIjoxNjgzNzg2MDcyLCJleHAiOjE2ODM3ODY2NzJ9.lqCs7GaKPwETRskGSt3d9PwY32WBdVHU4HXjEYYhHI4"  http://127.1:5000/api/auth/logout
     {
       "message": "logout successful"
     }
