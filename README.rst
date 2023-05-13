@@ -31,4 +31,4 @@ Quick Tutorial
 ====================
 Flask-securelogin provides a set of authentication APIs that can be seamlessly integrated to your REST API service. In your flask application, just simply add a few lines then the whole set of APIs will be ready to support account registration and login.
 
-Please refer to the `tutorial doc <https://pypi.org/project/flask-securelogin>`_  for more details.
+Please refer to the `tutorial doc <https://github.com/brilliance-qian/flask-securelogin/blob/main/docs/tutorial.rst>`_  for more details.
